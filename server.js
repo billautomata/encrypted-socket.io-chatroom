@@ -23,7 +23,9 @@ var key_cleanup = []
 
 // Add a connect listener
 io.sockets.on('connection', function(socket){
+
   console.log('crypto-proxy connected.');
+  clients.push(socket)
 
   socket.on('chat_message', function(msg){
     console.log('got an encrypted message from a crypto proxy',msg.from,msg.to)
@@ -57,6 +59,7 @@ io.sockets.on('connection', function(socket){
 
     var n_keys = keys.length
     keys = keys.filter(function(k){ return k.id !== msg.id})
+    console.log('removed',n_keys-keys.length,'keys')
   })
 
   socket.on('allkeys', function(msg){
@@ -72,8 +75,6 @@ io.sockets.on('connection', function(socket){
       })
     }
   })
-
-  clients.push(socket)
 
   // Disconnect listener
   socket.on('disconnect', function() {

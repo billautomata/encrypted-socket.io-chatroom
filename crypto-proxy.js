@@ -7,6 +7,7 @@ var port = process.argv[2]
 
 var crypto = require('crypto')
 
+// crypto proxy
 // registers web clients
 // generates keys for them
 
@@ -38,28 +39,35 @@ var public_keys = []
 // web client IO
 client_io.on('connection', function (client) {
 
+  // the id of the browser
   var id = client.id.split('/#')[1]
+  clients.push(client)
 
-  console.log('a user connected', id);
-  console.log('generating keys')
+  console.log('a user connected', id, 'generating keys')
 
-  // generate a key for the client
+  // generate a key object for the client
   var keypair = crypto.getDiffieHellman('modp14')
+
+  // generate the keys
   keypair.generateKeys()
 
-  client.keypair = keypair
-
-  server_socket.emit('new_keypair', {
-    id: id,
-    publickey: keypair.getPublicKey('hex')
-  })
-
-  clients.push(client)
+  // add to list of private keys
   private_keys.push({
     id: id,
     keypair: keypair
   })
 
+  // add hex text of publickey to list of public keys
+  public_keys.push({
+    id: id,
+    publickey: keypair.getPublicKey('hex')
+  })
+
+  // send the fresh public key to the key server
+  server_socket.emit('new_keypair', {
+    id: id,
+    publickey: keypair.getPublicKey('hex')
+  })
 
   client.on('chat_message', function (msg) {
     // browser sent a chat message
@@ -70,12 +78,15 @@ client_io.on('connection', function (client) {
 
     var from_keypair
     console.log('looking for keypair')
-    clients.forEach(function (c) {
-      if (c.id.indexOf(msg.from) !== -1) {
+    private_keys.forEach(function (key) {
+      if (key.id.indexOf(msg.from) !== -1) {
         console.log('found keypair')
-        from_keypair = c.keypair
+        from_keypair = key.keypair
       }
     })
+    if(from_keypair === undefined){
+      return;
+    }
 
 
     if (msg.to === 'all') {
@@ -115,7 +126,7 @@ client_io.on('connection', function (client) {
   client.on('disconnect', function () {
 
     server_socket.emit('remove_keypair', {
-      id: client.id
+      id: client.id.split('/#')[1]
     })
 
     clients = clients.filter(function (c) {
@@ -140,16 +151,33 @@ server_socket.on('connect', function () {
 });
 
 server_socket.on('key_cleanup', function (msg) {
-  // server is asking for the client to send all the keys
+  // server is asking for the client to send all the public keys it has
+  // private keys for, that are also current connected clients
+  var current_client_ids = []
+  clients.forEach(function(c){
+    current_client_ids.push(c.id.split('/#')[1])
+  })
+
+  console.log(current_client_ids)
+
+  var new_private_keys = []
+  private_keys.forEach(function(key){
+    if(current_client_ids.indexOf(key.id) !== -1){
+      new_private_keys.push(key)
+    }
+  })
+  private_keys = new_private_keys
+
   var msg = {
     keys: []
   }
-  clients.forEach(function (client) {
+  private_keys.forEach(function (key) {
     msg.keys.push({
-      id: client.id,
-      publickey: client.keypair.getPublicKey('hex')
+      id: key.id,
+      publickey: key.keypair.getPublicKey('hex')
     })
   })
+  // console.log(msg)
   server_socket.emit('allkeys', msg)
 })
 
@@ -209,14 +237,14 @@ server_socket.on('chat_message', function (msg) {
   } else if (keyA.type === 'private' && keyB.type === 'private') {
     console.log('here private private')
     private_key_obj = keyA.key.keypair
-    public_key_hex = keyA.key.keypair.getPublicKey('hex')
+    public_key_hex = keyB.key.keypair.getPublicKey('hex')
     // console.log(private_key_obj)
   } else {
     return console.log('no private key found for message, moving on...')
   }
 
   console.log('beyond the if check for key types')
-  console.log(private_key_obj)
+  console.log(private_key_obj, public_key_hex)
 
   var shared_secret = private_key_obj.computeSecret(public_key_hex, 'hex', 'hex')
 

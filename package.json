@@ -1,0 +1,24 @@
+{
+  "name": "otr_socket.io-chatroom",
+  "version": "1.0.0",
+  "description": "diffie hellman key driven chatroom",
+  "main": "crypto-proxy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/billautomata/otr_socket.io-chatroom.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/billautomata/otr_socket.io-chatroom/issues"
+  },
+  "homepage": "https://github.com/billautomata/otr_socket.io-chatroom#readme",
+  "dependencies": {
+    "socket.io": "^1.4.5",
+    "socket.io-client": "^1.4.5"
+  }
+}

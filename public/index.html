@@ -19,6 +19,8 @@
       })
     }
 
+    setInterval(function(){ send(String(new Date())) }, 3000)
+
     socket.on('decrypted_message', function(msg){
       console.log(msg)
     })
