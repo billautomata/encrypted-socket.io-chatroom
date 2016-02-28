@@ -76,6 +76,15 @@ server_socket.on('connect', function() {
   // request keypairs
 });
 
+server_socket.on('key_cleanup', function(msg){
+  clients.forEach(function(client){
+    server_socket.emit('new_keypair', {
+      id: client.id,
+      publickey: client.keypair.getPublicKey('hex')
+    })
+  })
+})
+
 server_socket.on('new_keypair', function(msg){
   // add keypair to keys
   console.log('got a new keypair')
