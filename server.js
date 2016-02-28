@@ -76,6 +76,7 @@ io.sockets.on('connection', function (socket) {
   })
 
   socket.on('allkeys', function (msg) {
+    // this event fires when a
     outstanding_requests -= 1
     msg.keys.forEach(function (key) {
       key_cleanup.push(key)
@@ -86,6 +87,7 @@ io.sockets.on('connection', function (socket) {
       key_cleanup.forEach(function (key) {
         keys.push(key)
       })
+      broadcast_keys()
     }
   })
 
@@ -100,9 +102,7 @@ io.sockets.on('connection', function (socket) {
 
 function broadcast_keys() {
   clients.forEach(function (c) {
-    keys.forEach(function (k) {
-      c.emit('new_keypair', k)
-    })
+    c.emit('broadcast_public_keys', keys)
   })
 }
 

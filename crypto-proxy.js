@@ -160,6 +160,14 @@ server_socket.on('key_cleanup', function (msg) {
 
   private_keys = new_private_keys
 
+  var public_key_ids = []
+  public_keys.forEach(function(k){
+    public_key_ids.push(k.id)
+  })
+  console.log(current_client_ids.length, private_keys.length, public_keys.length, public_key_ids.join('--'))
+
+
+
   var msg = {
     keys: []
   }
@@ -175,8 +183,16 @@ server_socket.on('key_cleanup', function (msg) {
 
 })
 
+server_socket.on('broadcast_public_keys', function(msg){
+  console.log('got new blob of publickeys from server')
+  public_keys = msg
+})
+
 server_socket.on('new_keypair', function (msg) {
   // add keypair to keys
+
+  console.log(msg.id)
+
   console.log('got a new keypair')
   if (public_keys.filter(function (k) {
       return k.id === msg.id
@@ -191,11 +207,11 @@ server_socket.on('new_keypair', function (msg) {
 server_socket.on('remove_keypair', function (msg) {
   console.log('got remove keypair event ')
     // remove key from keys where msg.id = key[n].id
-  console.log('lenth before', public_keys.length)
+  console.log('length before', public_keys.length)
   public_keys = public_keys.filter(function (k) {
     return k.id !== msg.id
   })
-  console.log('lenth after', public_keys.length)
+  console.log('length after', public_keys.length)
   console.log()
 })
 server_socket.on('chat_message', function (msg) {
