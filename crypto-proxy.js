@@ -117,12 +117,6 @@ client_io.on('connection', function (client) {
     //
   })
 
-  client.on('list_users', function (msg) {
-    public_keys.forEach(function (key) {
-      console.log(key)
-    })
-  })
-
   client.on('disconnect', function () {
 
     server_socket.emit('remove_keypair', {
@@ -157,15 +151,13 @@ server_socket.on('key_cleanup', function (msg) {
   clients.forEach(function(c){
     current_client_ids.push(c.id.split('/#')[1])
   })
-
-  console.log(current_client_ids)
-
   var new_private_keys = []
   private_keys.forEach(function(key){
     if(current_client_ids.indexOf(key.id) !== -1){
       new_private_keys.push(key)
     }
   })
+
   private_keys = new_private_keys
 
   var msg = {
@@ -177,13 +169,15 @@ server_socket.on('key_cleanup', function (msg) {
       publickey: key.keypair.getPublicKey('hex')
     })
   })
-  // console.log(msg)
+
+  // send all the keys to the server
   server_socket.emit('allkeys', msg)
+
 })
 
 server_socket.on('new_keypair', function (msg) {
   // add keypair to keys
-  // console.log('got a new keypair')
+  console.log('got a new keypair')
   if (public_keys.filter(function (k) {
       return k.id === msg.id
     }).length === 0) {
@@ -218,7 +212,7 @@ server_socket.on('chat_message', function (msg) {
   var keyA = find_key(msg.to)
   var keyB = find_key(msg.from)
 
-  console.log(keyA,keyB)
+  // console.log(keyA,keyB)
   console.log(keyA.type, keyB.type)
 
   var private_key_obj, public_key_hex

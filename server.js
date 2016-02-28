@@ -44,7 +44,7 @@ io.sockets.on('connection', function (socket) {
     // check to see if it is already being tracked
     // if not, add it to the list of keys
     // replay the message to the crypto-proxies using the clients array
-    // 
+    //
 
     console.log()
     if (keys.filter(function (k) {
@@ -57,9 +57,7 @@ io.sockets.on('connection', function (socket) {
     console.log('got keypair message', msg.id, 'there are now', keys.length, 'keys present')
 
     // propagate the keypairs
-    clients.forEach(function (c, idx) {
-      c.emit('new_keypair', msg)
-    })
+    broadcast_keys()
 
   })
 

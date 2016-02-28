@@ -1,9 +1,3 @@
-
-
-/* ==========================================================================
-   Author's custom styles
-   ========================================================================== */
-
 div#messages {
   outline: 1px solid black;
   height: 90%;
@@ -24,4 +18,5 @@ div#single_message {
 
 div#username_display {
   line-height: 2em;
+  font-family: monospace;
 }
