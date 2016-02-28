@@ -31,13 +31,16 @@ var crypto = require('crypto')
 //      send it to the server
 
 var clients = []
+var private_keys = []
 var public_keys = []
 
 /////////////////////////////////////////////////////////////////////////////
 // web client IO
 client_io.on('connection', function (client) {
 
-  console.log('a user connected', client.id);
+  var id = client.id.split('/#')[1]
+
+  console.log('a user connected', id);
   console.log('generating keys')
 
   // generate a key for the client
@@ -47,11 +50,16 @@ client_io.on('connection', function (client) {
   client.keypair = keypair
 
   server_socket.emit('new_keypair', {
-    id: client.id,
+    id: id,
     publickey: keypair.getPublicKey('hex')
   })
 
   clients.push(client)
+  private_keys.push({
+    id: id,
+    keypair: keypair
+  })
+
 
   client.on('chat_message', function (msg) {
     // browser sent a chat message
@@ -179,71 +187,98 @@ server_socket.on('chat_message', function (msg) {
   console.log('got an encrypted message from the server')
   console.log(msg.to, msg.from)
 
-  // get private key by filtering the clist of clients
-  var private_key = clients.filter(function (c) {
-    return c.id.indexOf(msg.from) !== -1
-  })
+  var keyA = find_key(msg.to)
+  var keyB = find_key(msg.from)
 
-  if (private_key.length !== 1) {
-    console.log('private key for the message not found by id of from')
-    private_key = clients.filter(function (c) {
-      return c.id.indexOf(msg.to) !== -1
-    })
-  }
+  console.log(keyA,keyB)
+  console.log(keyA.type, keyB.type)
 
-  if (private_key.length !== 1) {
-    console.log('private key for the message not found by id of to')
-    return;
+  var private_key_obj, public_key_hex
+
+  if (keyA.type === 'private' && keyB.type === 'public') {
+    console.log('here private public')
+    console.log(keyA.keypair)
+    private_key_obj = keyA.key.keypair
+    public_key_hex = keyB.key.publickey
+    // console.log(private_key_obj)
+  } else if (keyA.type === 'public' && keyB.type === 'private') {
+    console.log('here public private')
+    private_key_obj = keyB.key.keypair
+    public_key_hex = keyA.key.publickey
+    // console.log(private_key_obj)
+  } else if (keyA.type === 'private' && keyB.type === 'private') {
+    console.log('here private private')
+    private_key_obj = keyA.key.keypair
+    public_key_hex = keyA.key.keypair.getPublicKey('hex')
+    // console.log(private_key_obj)
   } else {
-
-    console.log('private key for the message found')
-    var public_key = public_keys.filter(function (key) {
-      return key.id.indexOf(msg.to) !== -1
-    })
-    if (public_key.length === 0) {
-      console.log('associated publickey not found')
-      return;
-    } else {
-
-      console.log('public key for the to found!')
-
-      console.log('from', msg.from, 'to', msg.to)
-      console.log('msg', msg.msg)
-      console.log('using private key of',private_key[0].id)
-      console.log('and publickey of ', public_key[0].id)
-
-      // console.log(public_keys)
-      // console.log('from', msg.from, 'from_id', private_key[0].id, msg.to, public_key[0].id)
-
-      var shared_secret = private_key[0].keypair.computeSecret(public_key[0].publickey, 'hex', 'hex')
-
-      // create 256 bit hash of the shared secret to use as the AES key
-      var password = crypto.createHash('sha256').update(shared_secret).digest()
-
-      // encrypt
-      var decipher = crypto.createDecipher('aes256', password)
-      var plain_text = Buffer.concat([decipher.update(Buffer(msg.msg,'hex')), decipher.final()])
-
-      var decrypted_msg = {
-          from: msg.from,
-          to: msg.to,
-          msg: plain_text.toString()
-        }
-        console.log('decrypted_message',decrypted_msg)
-
-        // send message to the client with the id of msg.to
-        clients.forEach(function(client){
-          if(client.id.indexOf(msg.to) !== -1){
-            console.log('sending message to browser')
-            client.emit('decrypted_message', decrypted_msg)
-          }
-        })
-
-    }
+    return console.log('no private key found for message, moving on...')
   }
 
+  console.log('beyond the if check for key types')
+  console.log(private_key_obj)
+
+  var shared_secret = private_key_obj.computeSecret(public_key_hex, 'hex', 'hex')
+
+  // create 256 bit hash of the shared secret to use as the AES key
+  var password = crypto.createHash('sha256').update(shared_secret).digest()
+
+  // encrypt
+  var decipher = crypto.createDecipher('aes256', password)
+  var plain_text = Buffer.concat([decipher.update(Buffer(msg.msg, 'hex')), decipher.final()])
+
+  var decrypted_msg = {
+    from: msg.from,
+    to: msg.to,
+    msg: plain_text.toString()
+  }
+  console.log('decrypted_message', decrypted_msg)
+
+  // send message to the client with the id of msg.to
+  clients.forEach(function (client) {
+    if (client.id.indexOf(msg.to) !== -1) {
+      console.log('sending message to browser')
+      client.emit('decrypted_message', decrypted_msg)
+    }
+  })
+  return;
 })
 
+function find_key(id) {
+  var keyfound = false
+  var returnkey
+  var type
+
+  private_keys.forEach(function (key) {
+    if (key.id.indexOf(id) !== -1) {
+      keyfound = true
+      returnkey = key
+      type = 'private'
+    }
+  })
+
+  if (!keyfound) {
+    public_keys.forEach(function (key) {
+      if (key.id.indexOf(id) !== -1) {
+        // console.log('here', key)
+        keyfound = true
+        returnkey = key
+        type = 'public'
+      }
+    })
+  }
+
+  if (keyfound) {
+    return {
+      search_id: id,
+      key: returnkey,
+      type: type
+    }
+  } else {
+    return -1
+  }
+
+}
 
 
 app.use(express.static('public'))
