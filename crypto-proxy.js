@@ -3,6 +3,8 @@ var app = express();
 var http = require('http').Server(app);
 var client_io = require('socket.io')(http);
 
+var port = process.argv[2]
+
 var crypto = require('crypto')
 
 // registers web clients
@@ -13,7 +15,7 @@ var crypto = require('crypto')
 // {
 //   from: id,
 //   to: id,
-//   msg: aes256 encrypted message, with the key being the shared secret of the two keys
+//   data: aes256 encrypted message, with the key being the shared secret of the two keys
 // }
 //
 // if from_id is in keys array and to_id is in clients array
@@ -29,20 +31,13 @@ var crypto = require('crypto')
 //      send it to the server
 
 var clients = []
-var keys = []
+var public_keys = []
 
-// Connect to server
-var server_io = require('socket.io-client');
-var server_socket = server_io.connect('http://localhost:3001', {reconnect: true});
-
-// Add a connect listener
-server_socket.on('connect', function(socket) {
-  console.log('Connected to server.');
-});
-
+/////////////////////////////////////////////////////////////////////////////
+// web client IO
 client_io.on('connection', function(client){
 
-  console.log(client.id)
+  console.log('a user connected', client.id);
   console.log('generating keys')
 
   // generate a key for the client
@@ -57,7 +52,7 @@ client_io.on('connection', function(client){
   })
 
   clients.push(client)
-  console.log('a user connected');
+
   client.on('disconnect',function(){
 
     server_socket.emit('remove_keypair', {
@@ -69,8 +64,46 @@ client_io.on('connection', function(client){
   })
 });
 
+/////////////////////////////////////////////////////////////////////////////
+// server <> server IO
+// Connect to server
+var server_io = require('socket.io-client');
+var server_socket = server_io.connect('http://localhost:3001', {reconnect: true});
+
+// Add a connect listener
+server_socket.on('connect', function() {
+  console.log('Connected to server.');
+  // request keypairs
+});
+
+server_socket.on('new_keypair', function(msg){
+  // add keypair to keys
+  console.log('got a new keypair')
+  if(public_keys.filter(function(k){ return k.id === msg.id }).length === 0 ){
+    // not already found
+    console.log('not found in list of publickeys, adding to list')
+    public_keys.push(msg)
+  } else {
+    console.log('already found in our list of public keys, not adding')
+  }
+})
+server_socket.on('remove_keypair', function(msg){
+  // remove key from keys where msg.id = key[n].id
+  public_keys = public_keys.filter(function(k){ return k.id !== msg.id })
+})
+server_socket.on('chat_message', function(msg){
+  // incoming chat message from the server
+  // { to: id, from: id, data: '...' }
+  // find the privatekey for the to_id
+  // find the publickey for the from_id
+  // decrypt the message
+  // emit the decrypted message to the client with the matching to_id
+})
+
+
+
 app.use(express.static('public'))
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
+http.listen(port, function(){
+  console.log('listening on *:'+port);
 });

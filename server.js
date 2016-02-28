@@ -30,7 +30,13 @@ io.sockets.on('connection', function(socket)
     console.log(msg)
     keys.push(msg)
 
+    console.log(keys.length, 'keys present')
+
     // propagate the keypairs
+    clients.forEach(function(c,idx){
+      console.log('sending message to', idx)
+      c.emit('new_keypair', msg)
+    })
 
   })
 
@@ -44,7 +50,6 @@ io.sockets.on('connection', function(socket)
       console.log('removed', (n_keys-keys.length), 'keys')
     }
   })
-
 
   clients.push(socket)
 
