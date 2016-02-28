@@ -7,3 +7,10 @@ diffie hellman key driven chatroom
 * [clients]
   * [crypto-proxy-server]
   * [browser]
+
+
+
+* [ ] client code for sending messages
+* [ ] client code for displaying messages
+* [ ] crypto-proxy code for encrypting the chat messages
+* [ ] crypto-proxy code for decrypting the chat messages

@@ -53,6 +53,13 @@ client_io.on('connection', function(client){
 
   clients.push(client)
 
+  client.on('chat_message', function(msg){
+    // browser sent a chat message
+    // encrypt the message for everyone in the public keys, and fire them off to
+    // the server_socket as 'chat_message' events
+    server_socket.emit('chat_message', encrypted_msg)
+  })
+
   client.on('disconnect',function(){
 
     server_socket.emit('remove_keypair', {
@@ -77,28 +84,37 @@ server_socket.on('connect', function() {
 });
 
 server_socket.on('key_cleanup', function(msg){
+  // server is asking for the client to send all the keys 
+  var msg = {
+    keys: []
+  }
   clients.forEach(function(client){
-    server_socket.emit('new_keypair', {
+    msg.keys.push({
       id: client.id,
       publickey: client.keypair.getPublicKey('hex')
     })
   })
+  server_socket.emit('allkeys', msg)
 })
 
 server_socket.on('new_keypair', function(msg){
   // add keypair to keys
-  console.log('got a new keypair')
+  // console.log('got a new keypair')
   if(public_keys.filter(function(k){ return k.id === msg.id }).length === 0 ){
     // not already found
     console.log('not found in list of publickeys, adding to list')
     public_keys.push(msg)
   } else {
-    console.log('already found in our list of public keys, not adding')
+    // console.log('already found in our list of public keys, not adding')
   }
 })
 server_socket.on('remove_keypair', function(msg){
+  console.log('got remove keypair event ')
   // remove key from keys where msg.id = key[n].id
+  console.log('lenth before', public_keys.length)
   public_keys = public_keys.filter(function(k){ return k.id !== msg.id })
+  console.log('lenth after', public_keys.length)
+  console.log()
 })
 server_socket.on('chat_message', function(msg){
   // incoming chat message from the server

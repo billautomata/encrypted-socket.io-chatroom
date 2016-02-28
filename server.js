@@ -25,8 +25,14 @@ var key_cleanup = []
 io.sockets.on('connection', function(socket){
   console.log('crypto-proxy connected.');
 
+  socket.on('chat_messsage', function(msg){
+    clients.forEach(function(c){
+      c.emit('chat_message', msg)
+    })
+  })
+
   socket.on('new_keypair', function(msg){
-    console.log('got keypair message', msg.id)
+    console.log()
 
     if(keys.filter(function(k){ return k.id === msg.id }).length === 0){
       keys.push(msg)
@@ -34,7 +40,7 @@ io.sockets.on('connection', function(socket){
       console.log('already present')
     }
 
-    console.log(keys.length, 'keys present')
+    console.log('got keypair message', msg.id, 'there are', keys.length, 'keys present')
 
     // propagate the keypairs
     clients.forEach(function(c,idx){
@@ -44,14 +50,12 @@ io.sockets.on('connection', function(socket){
   })
 
   socket.on('remove_keypair', function(msg){
-    console.log('got remove keypair message')
+    clients.forEach(function(c){
+      c.emit('remove_keypair', {id: msg.id})
+    })
+
     var n_keys = keys.length
     keys = keys.filter(function(k){ return k.id !== msg.id})
-    if(n_keys === keys.length){
-      console.log('did not remove any keys')
-    } else {
-      console.log('removed', (n_keys-keys.length), 'keys')
-    }
   })
 
   socket.on('allkeys', function(msg){
@@ -61,12 +65,10 @@ io.sockets.on('connection', function(socket){
     })
     if(outstanding_requests === 0){
       // replace keys with key_cleanup array
-      console.log('cleaning up key array from', keys.length)
       keys = []
       key_cleanup.forEach(function(key){
         keys.push(key)
       })
-      console.log('to', keys.length)
     }
   })
 
@@ -90,7 +92,9 @@ function broadcast_keys(){
 setInterval(refresh_keys,2000)
 
 function refresh_keys(){
+  console.log('nkeys',keys.length)
   outstanding_requests = 0
+  key_cleanup = []
   clients.forEach(function(c){
     outstanding_requests += 1
     c.emit('key_cleanup', {})
