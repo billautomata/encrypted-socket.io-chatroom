@@ -3,8 +3,26 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     var socket = io();
-    console.log('loaded')
-    console.log(socket)
+
+    socket.on('connect', function(){
+      console.log('connected!')
+      console.log('loaded', socket.id)
+    })
+
+    var users = []
+
+    function send(msg){
+      socket.emit('chat_message', {
+        from: socket.id,
+        to: 'all',
+        msg: msg
+      })
+    }
+
+    socket.on('decrypted_message', function(msg){
+      console.log(msg)
+    })
+
   </script>
 </head>
 <body>

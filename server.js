@@ -25,7 +25,8 @@ var key_cleanup = []
 io.sockets.on('connection', function(socket){
   console.log('crypto-proxy connected.');
 
-  socket.on('chat_messsage', function(msg){
+  socket.on('chat_message', function(msg){
+    console.log('got an encrypted message from a crypto proxy',msg.from,msg.to)
     clients.forEach(function(c){
       c.emit('chat_message', msg)
     })
