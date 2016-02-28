@@ -1,0 +1,27 @@
+
+
+/* ==========================================================================
+   Author's custom styles
+   ========================================================================== */
+
+div#messages {
+  outline: 1px solid black;
+  height: 90%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+div#message_input {
+  /*outline: 1px solid green;*/
+  /*height: 2em;*/
+}
+
+div#single_message {
+  font-size: 14px;
+  font-family: Helvetica;
+  padding-bottom: 1px;
+}
+
+div#username_display {
+  line-height: 2em;
+}
