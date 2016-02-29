@@ -87,7 +87,7 @@ on('got_message', fn(msg){
   // pass the encrypted data and the key to the decipher function
   var plain_text = decryptAES256(msg.encrypted_data, symmetric_key)
 
-  // pass long the decrypted message to the correct user connected to the proxy
+  // pass along the decrypted message to the correct user connected to the proxy
   user_socket[msg.to].emit({
     from: msg.from
     to: msg.to,
