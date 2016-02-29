@@ -37,7 +37,7 @@ The client application is served to the `browser` from a local `proxy` server.  
 
 After connecting to the local `proxy` the user generates a [Diffie-Hellman](https://nodejs.org/api/crypto.html#crypto_class_diffiehellman) key-pair. While the **private key** remains on the local `proxy`, the _public key_ is broadcast to all other `proxies` in a process mediated through the `server`.  That _public key_ is used by other proxies to encrypt the individual messages.
 
-In our chatroom when a user sends a message, it is broadcast to all users.  In an **unencrypted** environment the user need only transmit one message for any other user to read it.  But in an *end-to-end* **encrypted** environment, using and combination of *asymmetric encryption* and *symmetric encryption*, the user needs to create individual encrypted messages for each user in the channel.
+In our chatroom when a user sends a message, it is broadcast to all users.  In an **unencrypted** environment the user need only transmit one message for any and all other users to read it.  But in an *end-to-end* **encrypted** environment, using a combination of *asymmetric encryption* and *symmetric encryption*, the user needs to create individual encrypted messages for each user in the channel.  Each message is encrypted with a separate key-pair combination, and thus a different password for each message.
 
 ### message lifecycle description
 
