@@ -1,5 +1,31 @@
-# otr_socket.io-chatroom
+# encrypted-socket.io-chatroom
 > end-to-end public-key encrypted socket.io based chatroom
+
+> **important note** this application is for educational purposes, and is not meant to be used in a production environment where safety is a concern.
+
+### use
+
+```bash
+# clone repo
+git clone git@github.com:billautomata/encrypted-socket.io-chatroom.git
+cd encrypted-socket.io-chatroom
+npm install
+
+# to start the coordination server
+# the first argument is the port
+node server.js 3001
+
+# to start the local proxy server
+# the first argument is the port
+# the second argument is the address and port of the coordinator server
+node crypto-proxy.js 3003 http://localhost:3001
+
+# open the browser to connect to the local proxy that mediates the keys
+# and the encryption / decryption operations.
+open http://localhost:3003
+```
+
+### description
 
 #### `browser` > `localhost` > `proxy (encrypts)` > `server`
 #### < < < < `server only sees encrypted messages` > > > >
@@ -11,7 +37,7 @@ After connecting to the local `proxy` the user generates a [Diffie-Hellman](http
 
 In our chatroom when a user sends a message, it is broadcast to all users.  In an **unencrypted** environment the user need only transmit one message for any other user to read it.  But in an *end-to-end* **encrypted** environment, using and combination of *asymmetric encryption* and *symmetric encryption*, the user needs to create individual encrypted messages for each user in the channel.
 
-### psuedocode description
+### message lifecycle description
 
 ```javascript
 // psuedocode, proxy send a message to everyone on the server

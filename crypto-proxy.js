@@ -3,7 +3,8 @@ var app = express();
 var http = require('http').Server(app);
 var client_io = require('socket.io')(http);
 
-var port = process.argv[2]
+var port = process.argv[2] || 3003
+var coordination_server = process.argv[3] || 'http://localhost:3001'
 
 var crypto = require('crypto')
 
@@ -134,7 +135,7 @@ client_io.on('connection', function (client) {
 // server <> server IO
 // Connect to server
 var server_io = require('socket.io-client');
-var server_socket = server_io.connect('http://localhost:3001', {
+var server_socket = server_io.connect(coordination_server, {
   reconnect: true
 });
 
@@ -164,9 +165,6 @@ server_socket.on('key_cleanup', function (msg) {
   public_keys.forEach(function(k){
     public_key_ids.push(k.id)
   })
-  console.log(current_client_ids.length, private_keys.length, public_keys.length, public_key_ids.join('--'))
-
-
 
   var msg = {
     keys: []
@@ -184,14 +182,14 @@ server_socket.on('key_cleanup', function (msg) {
 })
 
 server_socket.on('broadcast_public_keys', function(msg){
-  console.log('got new blob of publickeys from server')
+  // console.log('got new blob of publickeys from server')
   public_keys = msg
 })
 
 server_socket.on('new_keypair', function (msg) {
   // add keypair to keys
 
-  console.log(msg.id)
+  // console.log(msg.id)
 
   console.log('got a new keypair')
   if (public_keys.filter(function (k) {
@@ -229,32 +227,22 @@ server_socket.on('chat_message', function (msg) {
   var keyB = find_key(msg.from)
 
   // console.log(keyA,keyB)
-  console.log(keyA.type, keyB.type)
+  // console.log(keyA.type, keyB.type)
 
   var private_key_obj, public_key_hex
 
   if (keyA.type === 'private' && keyB.type === 'public') {
-    console.log('here private public')
-    console.log(keyA.keypair)
     private_key_obj = keyA.key.keypair
     public_key_hex = keyB.key.publickey
-    // console.log(private_key_obj)
   } else if (keyA.type === 'public' && keyB.type === 'private') {
-    console.log('here public private')
     private_key_obj = keyB.key.keypair
     public_key_hex = keyA.key.publickey
-    // console.log(private_key_obj)
   } else if (keyA.type === 'private' && keyB.type === 'private') {
-    console.log('here private private')
     private_key_obj = keyA.key.keypair
     public_key_hex = keyB.key.keypair.getPublicKey('hex')
-    // console.log(private_key_obj)
   } else {
     return console.log('no private key found for message, moving on...')
   }
-
-  console.log('beyond the if check for key types')
-  console.log(private_key_obj, public_key_hex)
 
   var shared_secret = private_key_obj.computeSecret(public_key_hex, 'hex', 'hex')
 
@@ -270,6 +258,7 @@ server_socket.on('chat_message', function (msg) {
     to: msg.to,
     msg: plain_text.toString()
   }
+
   console.log('decrypted_message', decrypted_msg)
 
   // send message to the client with the id of msg.to

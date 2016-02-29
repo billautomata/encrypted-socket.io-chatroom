@@ -1,8 +1,11 @@
 // coordinates publickeys between crypto-proxies
 // coordinates encrypted messages between crypto-proxies
 
-var http = require('http'),
-  io = require('socket.io');
+var http = require('http')
+var io = require('socket.io')
+
+var port = process.argv[2] || '3001'
+var key_refresh_interval = 2000 // in ms
 
 // Create server & socket
 var server = http.createServer(function (req, res) {
@@ -13,7 +16,7 @@ var server = http.createServer(function (req, res) {
   res.end('<h1>Nothing. Just 404</h1>');
 });
 
-server.listen(3001);
+server.listen(port);
 io = io.listen(server);
 
 // List of currently connected sockets
@@ -33,7 +36,7 @@ io.sockets.on('connection', function (socket) {
   clients.push(socket)
 
   socket.on('chat_message', function (msg) {
-    console.log('got an encrypted message from a crypto proxy', msg.from, msg.to)
+    console.log('got an encrypted message [to][from][msg]', msg.from, msg.to, msg.msg)
     clients.forEach(function (c) {
       c.emit('chat_message', msg)
     })
@@ -106,10 +109,10 @@ function broadcast_keys() {
   })
 }
 
-setInterval(refresh_keys, 2000)
+setInterval(refresh_keys, key_refresh_interval)
 
 function refresh_keys() {
-  console.log('nkeys', keys.length)
+  // console.log('nkeys', keys.length)
   outstanding_requests = 0
   key_cleanup = []
   clients.forEach(function (c) {
