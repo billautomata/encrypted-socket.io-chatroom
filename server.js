@@ -79,7 +79,10 @@ io.sockets.on('connection', function (socket) {
   })
 
   socket.on('allkeys', function (msg) {
-    // this event fires when a
+    // this event fires when a client responds with their keys
+    // we decrement the outstanding requests variable so we know when we have
+    // all of them we have sent using the refresh_keys function
+    
     outstanding_requests -= 1
     msg.keys.forEach(function (key) {
       key_cleanup.push(key)

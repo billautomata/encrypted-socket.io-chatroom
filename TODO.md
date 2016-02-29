@@ -13,7 +13,7 @@
 
 
 * [x] UI polish
-* [ ] parameterize hostnames and ports
+* [x] parameterize hostnames and ports
 * [ ] crypto-proxy only binds on localhost
 * [ ] docs
   * [ ] key registration
