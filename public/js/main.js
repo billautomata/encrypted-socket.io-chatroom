@@ -7,14 +7,13 @@ socket.on('connect', function () {
 socket.on('decrypted_message', function (msg) {
   console.log(msg)
 
-  var div_parent = d3.select('div#messages')
-
+  var div_parent = d3.select('div#messages').append('div').attr('class', 'row').attr('id','single_message')
 
   var div_name = div_parent.append('div')
   var div_content = div_parent.append('div')
 
-  div_name.attr('class','user_name col-xs-3')
-  div_content.attr('class','col-xs-9').attr('id','single_message')
+  div_name.attr('class','col-xs-3 text-right').attr('id', 'username_display')
+  div_content.attr('class','col-xs-9').attr('id', 'message_display')
 
   div_name.html(msg.from)
   div_content.html(msg.msg)
@@ -23,7 +22,7 @@ socket.on('decrypted_message', function (msg) {
 
 var users = []
 
-d3.select('input#user_input').on('keydown', function(){
+d3.select('input#user_input_search').on('keydown', function(){
   if(d3.event.keyCode === 13){
     console.log(d3.select(this).property('value'))
     send(d3.select(this).property('value'))

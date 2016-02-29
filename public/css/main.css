@@ -6,17 +6,27 @@ div#messages {
 }
 
 div#message_input {
-  /*outline: 1px solid green;*/
-  /*height: 2em;*/
+  padding-bottom: 30px;
 }
 
 div#single_message {
+  line-height: 2em;
   font-size: 14px;
-  font-family: Helvetica;
-  padding-bottom: 1px;
+  font-family: monospace;
+  margin-bottom: 1px;
 }
 
 div#username_display {
   line-height: 2em;
   font-family: monospace;
+  background-color: rgba(0,0,0,0.1);
+  /*outline: 1px solid black;*/
+}
+
+div#message_display {
+  background-color: rgba(0,0,0,0.03);
+}
+
+input {
+  height: 2em;
 }
