@@ -78,38 +78,40 @@ client_io.on('connection', function (client) {
     console.log('incoming chat message from browser', msg)
 
     var from_keypair
-    console.log('looking for keypair')
+
     private_keys.forEach(function (key) {
       if (key.id.indexOf(msg.from) !== -1) {
         console.log('found keypair')
         from_keypair = key.keypair
       }
     })
-    if(from_keypair === undefined){
+    if (from_keypair === undefined) {
       return;
     }
 
-
     if (msg.to === 'all') {
       console.log('broadcasting to all')
+
+      // for every user we have a public key for
       public_keys.forEach(function (key) {
-        // console.log(key)
+
+        // calculate the shared secret
         var shared_secret = from_keypair.computeSecret(key.publickey, 'hex', 'hex')
-          // console.log(shared_secret)
 
         // create 256 bit hash of the shared secret to use as the AES key
         var password = crypto.createHash('sha256').update(shared_secret).digest()
 
-        // encrypt
+        // encrypt the message using the hash of the shared secret as the password
         var cipher = crypto.createCipher('aes256', password)
+
+        // create the ciphertext using the encryption object
         var cipher_text = Buffer.concat([cipher.update(msg.msg), cipher.final()])
 
         var encrypted_msg = {
-            from: msg.from,
-            to: key.id,
-            msg: cipher_text.toString('hex')
-          }
-          // console.log('encrypted_msg',encrypted_msg)
+          from: msg.from,
+          to: key.id,
+          msg: cipher_text.toString('hex')
+        }
 
         server_socket.emit('chat_message', encrypted_msg)
       })
@@ -149,12 +151,12 @@ server_socket.on('key_cleanup', function (msg) {
   // server is asking for the client to send all the public keys it has
   // private keys for, that are also current connected clients
   var current_client_ids = []
-  clients.forEach(function(c){
+  clients.forEach(function (c) {
     current_client_ids.push(c.id.split('/#')[1])
   })
   var new_private_keys = []
-  private_keys.forEach(function(key){
-    if(current_client_ids.indexOf(key.id) !== -1){
+  private_keys.forEach(function (key) {
+    if (current_client_ids.indexOf(key.id) !== -1) {
       new_private_keys.push(key)
     }
   })
@@ -162,7 +164,7 @@ server_socket.on('key_cleanup', function (msg) {
   private_keys = new_private_keys
 
   var public_key_ids = []
-  public_keys.forEach(function(k){
+  public_keys.forEach(function (k) {
     public_key_ids.push(k.id)
   })
 
@@ -181,7 +183,7 @@ server_socket.on('key_cleanup', function (msg) {
 
 })
 
-server_socket.on('broadcast_public_keys', function(msg){
+server_socket.on('broadcast_public_keys', function (msg) {
   // console.log('got new blob of publickeys from server')
   public_keys = msg
 })
