@@ -1,17 +1,20 @@
 # otr_socket.io-chatroom
-> end to end encrypted socket.io based chatroom
+> end-to-end public-key encrypted socket.io based chatroom
 
-#### `browser` > `localhost` > `proxy (encrypted)` > `server`
-#### `server` > `proxy (decrypted)` > `localhost` > `browser`
+#### `browser` > `localhost` > `proxy (encrypts)` > `server`
+#### < < < < `server only sees encrypted messages` > > > >
+#### `server` > `proxy (decrypts)` > `localhost` > `browser`
 
 The client application is served to the `browser` from a local `proxy` server.  The `proxy` handles all the key coordination, shared secret computation, encryption, decryption, and message routing.  The `server` never sees anything but public keys, and encrypted messages.
 
-After connecting to the local proxy the user generates a Diffie Hellman key-pair. While the private key remains on the local proxy, the public key is broadcast to all other proxies mediated through the `server`.  That public key is used by other proxies to encrypt the individual messages.
+After connecting to the local `proxy` the user generates a [Diffie-Hellman](https://nodejs.org/api/crypto.html#crypto_class_diffiehellman) key-pair. While the **private key** remains on the local `proxy`, the _public key_ is broadcast to all other `proxies` in a process mediated through the `server`.  That _public key_ is used by other proxies to encrypt the individual messages.
 
-When a user sends a message, it is broadcast to all users.  In an **unencrypted** environment *UserA* need only transmit one message for any other user to read it.  But in an *end-to-end* **encrypted** environment, using and combination of *asymmetric encryption* and *symmetric encryption*, the user needs to create individual encrypted messages for each user in the channel.
+In our chatroom when a user sends a message, it is broadcast to all users.  In an **unencrypted** environment the user need only transmit one message for any other user to read it.  But in an *end-to-end* **encrypted** environment, using and combination of *asymmetric encryption* and *symmetric encryption*, the user needs to create individual encrypted messages for each user in the channel.
+
+### psuedocode description
 
 ```javascript
-// psuedocode
+// psuedocode, proxy send a message to everyone on the server
 on('send_message', fn(msg){
 
   // for each person in the room
@@ -21,54 +24,49 @@ on('send_message', fn(msg){
     secret = my_private_key.computeSharedSecret(other_user.publickey)
 
     // determine a symmetric key from a hash of the shared secret
-    symmetric_key = createHashSHA256(my_key)
+    symmetric_key = createHashSHA256(secret)
 
     // create the encrypted version of the message
     encrypted_text = encryptAES256(msg, symmetric_key)
 
     // send the message to the server
     server.emit({
-      from: 'me',
+      from: my_user_id,
       to: other_user.id,
-      msg: encrypted_text
+      encrypted_data: encrypted_text
     })
 
   })
 })
 ```
 
-The [encryption cipher](https://nodejs.org/api/crypto.html#crypto_crypto_createcipher_algorithm_password) is `aes256`.
+```javascript
+// psuedocode, proxy got a message from the server
+on('got_message', fn(msg){
 
+  // get the public key associated with the sender, from a local array
+  var other_user_public_key = getPublicKey(msg.from)
 
-* [browser]
-* [crypto-proxy-server]
-* [chat server]
-* [clients]
-  * [crypto-proxy-server]
-  * [browser]
-* [x] UI for sending messages
-* [x] UI for displaying messages
-* [x] crypto-proxy code for encrypting the chat messages
-* [x] crypto-proxy code for decrypting the chat messages
-  * [x] fix up the code for matching private and public keypairs based on the from > to
+  // get the private key of mine, from a local array
+  var my_private_key = getPrivateKey(msg.to)
 
+  // compute the shared secret
+  var secret = my_private_key.computeSharedSecret(other_user_public_key)
 
+  // compute the hash of the secret
+  var symmetric_key = createHashSHA256(secret)
 
-* [x] UI polish
-* [ ] parameterize hostnames and ports
-* [ ] crypto-proxy only binds on localhost
-* [ ] docs
-  * [ ] key registration
-  * [ ] key cleanup
-  * [ ] outgoing message
-  * [ ] incoming message
-* [ ] blog post
+  // pass the encrypted data and the key to the decipher function
+  var plain_text = decryptAES256(msg.encrypted_data, symmetric_key)
 
+  // pass long the decrypted message to the correct user connected to the proxy
+  user_socket[msg.to].emit({
+    from: msg.from
+    to: msg.to,
+    decrypted_data: plain_text
+  })
 
+})
+```
 
-
-
-* server > proxy 'key_cleanup' {}
-  * proxy - build an array of public keys from list of private keys
-  * proxy - emit array of public keys to server
-    * proxy > server 'allkeys' {keys: []}
+The individual messages are encrypted using [AES256](https://nodejs.org/api/crypto.html#crypto_crypto_createcipher_algorithm_password) symmetric cipher.
