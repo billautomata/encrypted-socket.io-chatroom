@@ -3,7 +3,7 @@
 
 > **important note** this application is for educational purposes, and is not meant to be used in a production environment where safety is a concern.
 
-![Chatroom window](screenshot.png)
+![Chatroom window](screenshot.png?raw=true)
 
 ### use
 
